@@ -50,6 +50,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTH_USER_MODEL = 'user.KoinUser'
+
 ROOT_URLCONF = 'koinok_assignment1.urls'
 
 TEMPLATES = [

@@ -1,13 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
-from user.forms import UserAuthForm, UserLoginForm
+from user.forms import UserAuthForm, UserLoginForm, TwoFactorForm
 
 
 def register(request):
-    # print("Entered the register method")
     if request.method == 'POST':
-        # print("The method is post")
         form = UserAuthForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
@@ -15,7 +13,14 @@ def register(request):
             user.set_password(password)
             user.save()
             login(request, user=user)
-            return HttpResponse("Thank you very much %s, this is your login page" % request.user.username)
+            two_factor_form = TwoFactorForm()
+            # todo: obtain the secret key
+            secret_key = "SECRET_KEY"
+            user.secret_key = secret_key
+            user.save()
+            context = {'secret_key': secret_key, 'form': two_factor_form}
+            return render(request, 'user/two_factor.html', context)
+            # return HttpResponse("Thank you very much %s, this is your login page" % request.user.username)
         else:
             context = {'form': form}
             return render(request, 'user/register.html', context=context)
@@ -23,6 +28,24 @@ def register(request):
         form = UserAuthForm()
         context = {'form': form}
         return render(request, 'user/register.html', context=context)
+
+
+def two_factor_view(request):
+    user = request.user
+    form = TwoFactorForm(request.POST)
+    if form.is_valid():
+        otp = form.cleaned_data['OTP']
+        print(otp)
+        # TODO: add a method to verify the OTP
+        if not user.secret_key == otp:
+            return render(request, 'user/index.html', context={'user': user})
+        else:
+            form.add_error('OTP', 'OTP is wrong')
+            context = {'form': form}
+            return render(request, 'user/two_factor.html', context=context)
+    else:
+        context = {'form': form}
+        return render(request, 'user/two_factor.html', context=context)
 
 
 def login_view(request):
@@ -35,7 +58,13 @@ def login_view(request):
             # print('user: ', user)
             if user is not None:
                 login(request, user=user)
-                return HttpResponse('This is the profile page')
+                two_factor_form = TwoFactorForm()
+                # todo: obtain the secret key
+                secret_key = "SECRET_KEY"
+                user.secret_key = secret_key
+                user.save()
+                context = {'secret_key': secret_key, 'form': two_factor_form}
+                return render(request, 'user/two_factor.html', context)
             else:
                 return HttpResponse('The user is not registered')
         else:
