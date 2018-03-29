@@ -16,4 +16,4 @@ class UserLoginForm(forms.Form):
 
 
 class TwoFactorForm(forms.Form):
-    OTP = forms.CharField(required=True)
+    OTP = forms.IntegerField(required=True)

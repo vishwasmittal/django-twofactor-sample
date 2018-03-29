@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
+
 from user.forms import UserAuthForm, UserLoginForm, TwoFactorForm
+from user.utils import generate_secret, confirm_totp_token
 
 
 def register(request):
@@ -14,8 +16,7 @@ def register(request):
             user.save()
             login(request, user=user)
             two_factor_form = TwoFactorForm()
-            # todo: obtain the secret key
-            secret_key = "SECRET_KEY"
+            secret_key = generate_secret()
             user.secret_key = secret_key
             user.save()
             context = {'secret_key': secret_key, 'form': two_factor_form}
@@ -35,12 +36,10 @@ def two_factor_view(request):
     form = TwoFactorForm(request.POST)
     if form.is_valid():
         otp = form.cleaned_data['OTP']
-        print(otp)
-        # TODO: add a method to verify the OTP
-        if not user.secret_key == otp:
+        if confirm_totp_token(otp, user.secret_key):
             return render(request, 'user/index.html', context={'user': user})
         else:
-            form.add_error('OTP', 'OTP is wrong')
+            form.add_error('OTP', 'OTP is wrong, enter again')
             context = {'form': form}
             return render(request, 'user/two_factor.html', context=context)
     else:
@@ -53,24 +52,17 @@ def login_view(request):
         form = UserLoginForm(request.POST)
         if form.is_valid():
             data = form.cleaned_data
-            # print("username: ", data['username'], ', password: ', data['password'])
             user = authenticate(request=request, username=data['username'], password=data['password'])
-            # print('user: ', user)
             if user is not None:
                 login(request, user=user)
                 two_factor_form = TwoFactorForm()
-                # todo: obtain the secret key
-                secret_key = "SECRET_KEY"
-                user.secret_key = secret_key
-                user.save()
-                context = {'secret_key': secret_key, 'form': two_factor_form}
+                context = {'form': two_factor_form}
                 return render(request, 'user/two_factor.html', context)
             else:
                 return HttpResponse('The user is not registered')
         else:
             context = {'form': form}
             return render(request, 'user/login.html', context=context)
-
     else:
         form = UserLoginForm()
         context = {'form': form}
