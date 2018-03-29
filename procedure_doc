@@ -1,3 +1,0 @@
-1) make a regular registration-login system
-2) when user signup, render a template that shows the qr code (and its text), a text field and a capcha.
-3) upon login, the user will be directd
