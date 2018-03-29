@@ -3,11 +3,12 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 
 from user.forms import UserAuthForm, UserLoginForm, TwoFactorForm
-from user.utils import generate_secret, confirm_totp_token
+from user.utils import generate_secret, confirm_totp_token, verify_user
 
 
 def register(request):
     if request.method == 'POST':
+        print(request.POST)
         form = UserAuthForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
@@ -33,9 +34,16 @@ def register(request):
 
 def two_factor_view(request):
     user = request.user
+    # print(request.POST)
     form = TwoFactorForm(request.POST)
+    # print(form)
     if form.is_valid():
         otp = form.cleaned_data['OTP']
+        g_response = form.cleaned_data['g_recaptcha_response']
+        if not verify_user(g_response):
+            form.add_error(None, "ReCapcha can't verify you!")
+            context = {'form': form}
+            return render(request, 'user/two_factor.html', context=context)
         if confirm_totp_token(otp, user.secret_key):
             return render(request, 'user/index.html', context={'user': user})
         else:

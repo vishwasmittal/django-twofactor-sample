@@ -12,8 +12,8 @@
 {% endif %}
 <form action='{% url "tfv" %}' method="post" onsubmit="check_if_capcha_is_filled">
     {% csrf_token %}
-    {{ form.as_p }}
-    <div class="g-recaptcha" data-sitekey="6LfFnk8UAAAAACiF_DOAuEokVd2EGvWALuUq_P49"></div>
+    <p><label for="id_OTP">Otp:</label> <input type="number" name="OTP" id="id_OTP" required=""></p>
+    <div class="g-recaptcha" data-sitekey="6LfFnk8UAAAAACiF_DOAuEokVd2EGvWALuUq_P49" name=""></div>
     <input type="submit" value="Submit"/>
 </form>
 <script src='https://www.google.com/recaptcha/api.js'>

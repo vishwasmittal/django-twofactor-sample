@@ -4,7 +4,9 @@ import hmac
 import random
 import struct
 import time
-
+import requests
+import os
+import json
 
 def get_hotp_token(secret, intervals_no):
     key = base64.b32decode(secret)
@@ -36,3 +38,21 @@ def confirm_totp_token(token, secret):
         return True
     else:
         return False
+
+
+def verify_user(g_response):
+    url = "https://www.google.com/recaptcha/api/siteverify"
+    print(os.environ.get('CAPTHA_SECRET', ''))
+    payload = "secret=%s&" \
+              "response=%s" % (os.environ.get('CAPTHA_SECRET', ''), g_response)
+    headers = {
+        'content-type': "application/x-www-form-urlencoded",
+        'cache-control': "no-cache",
+        'postman-token': "c39edcba-7548-847c-0a4f-a0c83af30e74"
+    }
+
+    response = requests.request("POST", url, data=payload, headers=headers)
+    resp = json.loads(response.text)
+    if 'success' in resp:
+        return resp['success']
+    # print(response.text)
