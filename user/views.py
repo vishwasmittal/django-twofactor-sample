@@ -53,6 +53,8 @@ def two_factor_view(request, source):
     else:
         if source == 'register':
             user = request.user
+            if user.secret_key:
+                return HttpResponseRedirect(reverse_lazy('two-factor-verification', kwargs={'source': 'login'}))
             two_factor_form = TwoFactorForm()
             secret_key = generate_secret()
             user.secret_key = secret_key
