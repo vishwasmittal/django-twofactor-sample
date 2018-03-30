@@ -46,10 +46,7 @@ def generate_secret(length=16):
 
 
 def confirm_totp_token(token, secret):
-    tokens = [get_hotp_token(secret, intervals_no=(int(time.time()) // 30) - 1),
-              get_hotp_token(secret, intervals_no=int(time.time()) // 30),
-              get_hotp_token(secret, intervals_no=(int(time.time()) // 30)) + 1]
-    # print(tokens)
+    tokens = [get_hotp_token(secret, intervals_no=(int(time.time()) // 30) - i) for i in range(-10, 10)]
     if token in tokens:
         return True
     else:

@@ -29,8 +29,8 @@ def register(request):
 
 @login_required(login_url=reverse_lazy('login'))
 def two_factor_view(request, source):
+    user = request.user
     if request.method == 'POST':
-        user = request.user
         form = TwoFactorForm(request.POST)
         if form.is_valid():
             otp = form.cleaned_data['OTP']
@@ -52,18 +52,17 @@ def two_factor_view(request, source):
             return render(request, 'user/two_factor.html', context=context)
     else:
         if source == 'register':
-            user = request.user
             if user.secret_key:
                 return HttpResponseRedirect(reverse_lazy('two-factor-verification', kwargs={'source': 'login'}))
             two_factor_form = TwoFactorForm()
             secret_key = generate_secret()
             user.secret_key = secret_key
             user.save()
-            context = {'secret_key': secret_key, 'form': two_factor_form}
+            context = {'secret_key': secret_key, 'form': two_factor_form, 'user': user}
             return render(request, 'user/two_factor.html', context)
         elif source == 'login':
             two_factor_form = TwoFactorForm()
-            context = {'form': two_factor_form}
+            context = {'form': two_factor_form, 'user': user}
             return render(request, 'user/two_factor.html', context)
         else:
             raise Http404("Not Found")

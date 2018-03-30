@@ -5,9 +5,12 @@
     <title>2 factor</title>
 </head>
 <body>
+{{ user.username }}
+<br>
 {% if secret_key %}
+{#    otpauth://totp/alice@koinAssign.ok?secret=JBSWY3DPEHPK3PXP#}
     Scan the image:
-    <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl={{ secret_key }}"/>
+    <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl=otpauth://totp/{{ user.username }}@koinAssign.ok?secret={{ secret_key }}"/>
     <p>Key: {{ secret_key }}</p>
 {% endif %}
 <form method="post"> <!-- onsubmit="check_if_capcha_is_filled">-->
