@@ -1,14 +1,15 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-from django.http import HttpResponse
+from django.urls import reverse_lazy
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth import authenticate, login, logout
 
 from user.forms import UserAuthForm, UserLoginForm, TwoFactorForm
-from user.utils import generate_secret, confirm_totp_token, verify_user
+from user.utils import generate_secret, confirm_totp_token, verify_user, two_factor_login_required
 
 
 def register(request):
     if request.method == 'POST':
-        print(request.POST)
         form = UserAuthForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
@@ -16,13 +17,7 @@ def register(request):
             user.set_password(password)
             user.save()
             login(request, user=user)
-            two_factor_form = TwoFactorForm()
-            secret_key = generate_secret()
-            user.secret_key = secret_key
-            user.save()
-            context = {'secret_key': secret_key, 'form': two_factor_form}
-            return render(request, 'user/two_factor.html', context)
-            # return HttpResponse("Thank you very much %s, this is your login page" % request.user.username)
+            return HttpResponseRedirect(reverse_lazy('two-factor-verification', kwargs={'source': 'register'}))
         else:
             context = {'form': form}
             return render(request, 'user/register.html', context=context)
@@ -32,27 +27,44 @@ def register(request):
         return render(request, 'user/register.html', context=context)
 
 
-def two_factor_view(request):
-    user = request.user
-    # print(request.POST)
-    form = TwoFactorForm(request.POST)
-    # print(form)
-    if form.is_valid():
-        otp = form.cleaned_data['OTP']
-        g_response = form.cleaned_data['g_recaptcha_response']
-        if not verify_user(g_response):
-            form.add_error(None, "ReCapcha can't verify you!")
-            context = {'form': form}
-            return render(request, 'user/two_factor.html', context=context)
-        if confirm_totp_token(otp, user.secret_key):
-            return render(request, 'user/index.html', context={'user': user})
+@login_required(login_url=reverse_lazy('login'))
+def two_factor_view(request, source):
+    if request.method == 'POST':
+        user = request.user
+        form = TwoFactorForm(request.POST)
+        if form.is_valid():
+            otp = form.cleaned_data['OTP']
+            g_response = form.cleaned_data['g_recaptcha_response']
+            if not verify_user(g_response):
+                form.add_error(None, "ReCapcha can't verify you!")
+                context = {'form': form}
+                return render(request, 'user/two_factor.html', context=context)
+            if confirm_totp_token(otp, user.secret_key):
+                user.auth_complete = True
+                # TODO: redirect to the login page, instead of just
+                return render(request, 'user/index.html', context={'user': user})
+            else:
+                form.add_error('OTP', 'OTP is wrong, enter again')
+                context = {'form': form}
+                return render(request, 'user/two_factor.html', context=context)
         else:
-            form.add_error('OTP', 'OTP is wrong, enter again')
             context = {'form': form}
             return render(request, 'user/two_factor.html', context=context)
     else:
-        context = {'form': form}
-        return render(request, 'user/two_factor.html', context=context)
+        if source == 'register':
+            user = request.user
+            two_factor_form = TwoFactorForm()
+            secret_key = generate_secret()
+            user.secret_key = secret_key
+            user.save()
+            context = {'secret_key': secret_key, 'form': two_factor_form}
+            return render(request, 'user/two_factor.html', context)
+        elif source == 'login':
+            two_factor_form = TwoFactorForm()
+            context = {'form': two_factor_form}
+            return render(request, 'user/two_factor.html', context)
+        else:
+            return Http404("Not Found")
 
 
 def login_view(request):
@@ -63,9 +75,7 @@ def login_view(request):
             user = authenticate(request=request, username=data['username'], password=data['password'])
             if user is not None:
                 login(request, user=user)
-                two_factor_form = TwoFactorForm()
-                context = {'form': two_factor_form}
-                return render(request, 'user/two_factor.html', context)
+                return HttpResponseRedirect(reverse_lazy('two-factor-verification', kwargs={'source': 'login'}))
             else:
                 return HttpResponse('The user is not registered')
         else:
@@ -77,11 +87,14 @@ def login_view(request):
         return render(request, 'user/login.html', context=context)
 
 
+@login_required(login_url=reverse_lazy('login'))
+@two_factor_login_required
 def me(request):
-    print(request.user)
-    return HttpResponse(request.user.username)
+    user = request.user
+    return render(request, 'user/index.html', context={'user': user})
 
 
 def logout_view(request):
+    request.user.auth_complete = False
     logout(request)
     return HttpResponse("You have been logged out :)")

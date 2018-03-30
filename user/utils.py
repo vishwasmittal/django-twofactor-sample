@@ -8,6 +8,22 @@ import requests
 import os
 import json
 
+from django.shortcuts import resolve_url
+from django.urls import reverse_lazy
+
+
+def two_factor_login_required(function):
+    def wrapper_function(request, *args, **kwargs):
+        if request.user.auth_complete:
+            return function(request, *args, **kwargs)
+        path = request.build_absolute_uri()
+        resolved_login_url = resolve_url(reverse_lazy('two-factor-verification', kwargs={'source': 'login'}))
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(path, resolved_login_url)
+
+    return wrapper_function
+
+
 def get_hotp_token(secret, intervals_no):
     key = base64.b32decode(secret)
     msg = struct.pack(">Q", intervals_no)
@@ -42,7 +58,6 @@ def confirm_totp_token(token, secret):
 
 def verify_user(g_response):
     url = "https://www.google.com/recaptcha/api/siteverify"
-    print(os.environ.get('CAPTHA_SECRET', ''))
     payload = "secret=%s&" \
               "response=%s" % (os.environ.get('CAPTHA_SECRET', ''), g_response)
     headers = {
@@ -55,4 +70,4 @@ def verify_user(g_response):
     resp = json.loads(response.text)
     if 'success' in resp:
         return resp['success']
-    # print(response.text)
+        # print(response.text)

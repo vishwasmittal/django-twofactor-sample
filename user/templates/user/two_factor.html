@@ -10,7 +10,7 @@
     <img src="https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl={{ secret_key }}"/>
     <p>Key: {{ secret_key }}</p>
 {% endif %}
-<form action='{% url "tfv" %}' method="post"> <!-- onsubmit="check_if_capcha_is_filled">-->
+<form method="post"> <!-- onsubmit="check_if_capcha_is_filled">-->
     {% csrf_token %}
     {{ form.errors }}
     <p><label for="id_OTP">Otp:</label> <input type="number" name="OTP" id="id_OTP" required=""></p>

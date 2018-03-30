@@ -28,9 +28,8 @@ if os.environ.get('ENV', '') == 'DEV':
 else:
     DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '159.65.251.81', 'pactus.serveo.net']
 
-# Application definition
 
 INSTALLED_APPS = [
     'django.contrib.admin',

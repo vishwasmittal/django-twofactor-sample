@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Index</title>
+{#    <script src="https://cdn.ethers.io/scripts/ethers-v2.min.js"></script>#}
+    <script src="https://cdn.ethers.io/scripts/ethers-v2.min.js"
+        charset="utf-8"
+        type="text/javascript">
+</script>
 </head>
 <body>
 
 Welcome {{ user.username }}
+<br>
+<button onclick="generateRandomWallet()">Create random wallet</button>
 
-<button onclick="function createRandomWallet() {
-var wallet = Wallet.createRandom();
-        console.log('Address:' + wallet.address);
-}
-createRandomWallet()">Create random wallet</button>
-
-
-<script
-    src="https://cdn.ethers.io/scripts/ethers-v2.min.js"
-        charset="utf-8"
-        type="text/javascript">
-
+<script>
+    function generateRandomWallet() {
+        const wallet = ethers.Wallet.createRandom();
+        console.log("wallet address: " + wallet.address);
+    }
 </script>
 </body>
 </html>
