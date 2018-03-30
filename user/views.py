@@ -64,7 +64,7 @@ def two_factor_view(request, source):
             context = {'form': two_factor_form}
             return render(request, 'user/two_factor.html', context)
         else:
-            return Http404("Not Found")
+            raise Http404("Not Found")
 
 
 def login_view(request):
@@ -77,7 +77,10 @@ def login_view(request):
                 login(request, user=user)
                 return HttpResponseRedirect(reverse_lazy('two-factor-verification', kwargs={'source': 'login'}))
             else:
-                return HttpResponse('The user is not registered')
+                # return HttpResponse('Wrong credentials')
+                form.add_error(None, "Wrong Credentials")
+                context = {'form': form}
+                return render(request, 'user/login.html', context=context)
         else:
             context = {'form': form}
             return render(request, 'user/login.html', context=context)
@@ -97,4 +100,4 @@ def me(request):
 def logout_view(request):
     request.user.auth_complete = False
     logout(request)
-    return HttpResponse("You have been logged out :)")
+    return HttpResponseRedirect(reverse_lazy('index'))

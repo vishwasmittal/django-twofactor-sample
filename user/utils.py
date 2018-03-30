@@ -59,7 +59,7 @@ def confirm_totp_token(token, secret):
 def verify_user(g_response):
     url = "https://www.google.com/recaptcha/api/siteverify"
     payload = "secret=%s&" \
-              "response=%s" % (os.environ.get('CAPTHA_SECRET', ''), g_response)
+              "response=%s" % (os.environ.get('CAPCHA_SECRET', ''), g_response)
     headers = {
         'content-type': "application/x-www-form-urlencoded",
         'cache-control': "no-cache",

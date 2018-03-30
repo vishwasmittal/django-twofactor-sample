@@ -12,13 +12,16 @@
 <body>
 
 Welcome {{ user.username }}
+<p id="walled_id"></p>
 <br>
 <button onclick="generateRandomWallet()">Create random wallet</button>
-
+<br>
+<a href={% url 'logout' %}>logout</a>
 <script>
     function generateRandomWallet() {
         const wallet = ethers.Wallet.createRandom();
         console.log("wallet address: " + wallet.address);
+        document.getElementById("walled_id").innerText = "wallet address: " + wallet.address;
     }
 </script>
 </body>
